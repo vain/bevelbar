@@ -221,7 +221,7 @@ draw_empty(int monitor)
 
     for (i = 0; i < numbars; i++)
         if (i == monitor || monitor == -1)
-            bars[i].dw += font_height;
+            bars[i].dw += 0.5 * font_height;
 }
 
 static void
