@@ -25,7 +25,7 @@ do
 #    echo 0"$(xprop -root WM_NAME | sed 's/^[^"]\+"//; s/"$//')"
 #    echo e
 #    echo f
-done | ./bevelbar top left 5 'Terminus:pixelsize=10' \
+done | ./bevelbar left top 5 2 'Terminus:pixelsize=10' \
     '#a3a3a3' \
     '#b1b1b1' '#363636' \
     '#bebebe' '#000000' '#e1e1e1' '#747474' \

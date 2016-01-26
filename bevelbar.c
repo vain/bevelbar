@@ -28,7 +28,8 @@ static XftColor basic_colors[3], *styles = NULL;
 static int numstyles;
 static XftFont *font;
 static int font_height, font_baseline, horiz_margin;
-static int padding;
+static int horiz_padding, verti_padding;
+static int horiz_pos, verti_pos;
 
 static char *
 handle_stdin(char *existing, size_t *fill)
@@ -193,7 +194,7 @@ draw_init_pixmaps(void)
 static void
 draw_show(void)
 {
-    int i;
+    int i, x, y;
 
     if (inputbuf_len <= 0)
         return;
@@ -202,12 +203,18 @@ draw_show(void)
     {
         XCopyArea(dpy, bars[i].pm, bars[i].win, bars[i].gc, 0, 0,
                   bars[i].dw, bars[i].dh, 0, 0);
-        fprintf(stderr, "showing %d: %d %d, %d %d\n", i,
-                          bars[i].mx + padding, bars[i].my + padding,
-                          bars[i].dw, bars[i].dh);
-        XMoveResizeWindow(dpy, bars[i].win,
-                          bars[i].mx + padding, bars[i].my + padding,
-                          bars[i].dw, bars[i].dh);
+
+        if (horiz_pos == -1)
+            x = bars[i].mx + horiz_padding;
+        else
+            x = bars[i].mx + bars[i].mw - bars[i].dw - horiz_padding;
+
+        if (verti_pos == -1)
+            y = bars[i].my + verti_padding;
+        else
+            y = bars[i].my + bars[i].mh - bars[i].dh - verti_padding;
+
+        XMoveResizeWindow(dpy, bars[i].win, x, y, bars[i].dw, bars[i].dh);
     }
 }
 
@@ -402,20 +409,33 @@ draw_everything(void)
 }
 
 static bool
-init_font_and_colors(int argc, char **argv)
+evaulate_args(int argc, char **argv)
 {
     int i, b;
 
-    if (argc < 8)
+    if (argc < 9)
     {
         fprintf(stderr, __NAME__": No basic color/font arguments found\n");
         return false;
     }
 
-    font = XftFontOpenName(dpy, screen, argv[4]);
+    if (strncmp(argv[1], "left", strlen("left")) == 0)
+        horiz_pos = -1;
+    else
+        horiz_pos = 1;
+
+    if (strncmp(argv[2], "top", strlen("top")) == 0)
+        verti_pos = -1;
+    else
+        verti_pos = 1;
+
+    horiz_padding = atoi(argv[3]);
+    verti_padding = atoi(argv[4]);
+
+    font = XftFontOpenName(dpy, screen, argv[5]);
     if (!font)
     {
-        fprintf(stderr, __NAME__": Cannot open font '%s'\n", argv[3]);
+        fprintf(stderr, __NAME__": Cannot open font '%s'\n", argv[5]);
         return false;
     }
 
@@ -431,7 +451,7 @@ init_font_and_colors(int argc, char **argv)
      * multiplied with 1.25, but looks good) */
     font_baseline = font_height - font->descent;
 
-    for (b = 0, i = 5; i <= 7; i++, b++)
+    for (b = 0, i = 6; i <= 8; i++, b++)
     {
         if (!XftColorAllocName(dpy, DefaultVisual(dpy, screen),
                                DefaultColormap(dpy, screen), argv[i],
@@ -442,7 +462,7 @@ init_font_and_colors(int argc, char **argv)
         }
     }
 
-    numstyles = (argc - 8) / 4;
+    numstyles = (argc - 9) / 4;
     if (numstyles > 0)
     {
         styles = calloc(numstyles, sizeof (XftColor) * 4);
@@ -452,7 +472,7 @@ init_font_and_colors(int argc, char **argv)
             return false;
         }
 
-        for (b = 0, i = 8; i < argc; i++, b++)
+        for (b = 0, i = 9; i < argc; i++, b++)
         {
             fprintf(stderr, "Want to alloc color %d, index %d\n", b, i);
             fprintf(stderr, "Got room for %d styles\n", numstyles);
@@ -490,10 +510,7 @@ main(int argc, char **argv)
     if (bars == NULL)
         exit(EXIT_FAILURE);
 
-    /* XXX evaluate "top", "left", "border" */
-    padding = atoi(argv[3]);
-
-    if (!init_font_and_colors(argc, argv))
+    if (!evaulate_args(argc, argv))
         exit(EXIT_FAILURE);
 
     /* The xlib docs say: On a POSIX system, the connection number is
