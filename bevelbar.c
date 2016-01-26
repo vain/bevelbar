@@ -27,7 +27,7 @@ static size_t inputbuf_len = 0;
 static XftColor basic_colors[3], *styles = NULL;
 static int numstyles;
 static XftFont *font;
-static int font_height, font_baseline;
+static int font_height, font_baseline, horiz_margin;
 static int padding;
 
 static char *
@@ -179,7 +179,13 @@ draw_init_pixmaps(void)
         XSetForeground(dpy, bars[i].gc, basic_colors[0].pixel);
         XFillRectangle(dpy, bars[i].pm, bars[i].gc, 0, 0, bars[i].mw, bars[i].mh);
 
+        /* Skip first pixel because this makes room for the global bevel
+         * border */
         bars[i].dw = 1;
+
+        /* font_height is fixed, plus one pixel above and below for the
+         * segment border, plus one pixel above and below for the
+         * global border */
         bars[i].dh = 2 + 2 + font_height;
     }
 }
@@ -210,13 +216,11 @@ draw_empty(int monitor)
 {
     int i;
 
+    /* An "empty segment" just shifts the offset for the next segment */
+
     for (i = 0; i < numbars; i++)
-    {
         if (i == monitor || monitor == -1)
-        {
             bars[i].dw += font_height;
-        }
-    }
 }
 
 static void
@@ -236,7 +240,7 @@ draw_text(int monitor, int style, size_t from, size_t len)
             /* Get width of the rendered text. Add a little margin on
              * both sides. */
             XftTextExtentsUtf8(dpy, font, (XftChar8 *)&inputbuf[from], len, &ext);
-            w = ext.xOff + 0.5 * font_height;
+            w = horiz_margin + ext.xOff + horiz_margin;
 
             /* Background fill */
             XSetForeground(dpy, bars[i].gc, styles[style * 4].pixel);
@@ -248,7 +252,7 @@ draw_text(int monitor, int style, size_t from, size_t len)
             xd = XftDrawCreate(dpy, bars[i].pm, DefaultVisual(dpy, screen),
                                DefaultColormap(dpy, screen));
             XftDrawStringUtf8(xd, &styles[style * 4 + 1], font,
-                              bars[i].dw + 1 + 0.25 * font_height,
+                              bars[i].dw + 1 + horiz_margin,
                               font_baseline,
                               (XftChar8 *)&inputbuf[from], len);
             XftDrawDestroy(xd);
@@ -417,7 +421,14 @@ init_font_and_colors(int argc, char **argv)
 
     /* http://lists.schmorp.de/pipermail/rxvt-unicode/2012q4/001674.html */
     font_height = MAX(font->ascent + font->descent, font->height);
+
+    /* We don't want to use the exact height but add a little margin.
+     * Similarly, in x direction, there shall be some kind of margin. */
     font_height *= 1.25;
+    horiz_margin = 0.25 * font_height;
+
+    /* See common baseline definition (kind of whacky since we
+     * multiplied with 1.25, but looks good) */
     font_baseline = font_height - font->descent;
 
     for (b = 0, i = 5; i <= 7; i++, b++)
