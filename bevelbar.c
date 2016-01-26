@@ -67,10 +67,6 @@ handle_stdin(char *existing, size_t *fill)
             buf[*fill - 2] == 'f' &&
             buf[*fill - 1] == '\n')
         {
-            /* XXX remove debug output */
-            fprintf(stderr, "READ: '");
-            write(STDERR_FILENO, buf, *fill);
-            fprintf(stderr, "'\n");
             return buf;
         }
     }
@@ -156,8 +152,6 @@ create_bars(void)
                 &wa
         );
         XMapRaised(dpy, bars[i].win);
-        fprintf(stderr, __NAME__": Created window for %d %d, %d %d\n",
-                bars[i].mx, bars[i].my, bars[i].mw, bars[i].mh);
     }
 
     return bars;
@@ -236,9 +230,6 @@ draw_text(int monitor, int style, size_t from, size_t len)
     int i, w;
     XftDraw *xd;
     XGlyphInfo ext;
-
-    fprintf(stderr, "drawing text on moni %d\n", monitor);
-    fprintf(stderr, "I'm supposed to draw from %lu, %lu bytes\n", from, len);
 
     for (i = 0; i < numbars; i++)
     {
@@ -474,8 +465,6 @@ evaulate_args(int argc, char **argv)
 
         for (b = 0, i = 9; i < argc; i++, b++)
         {
-            fprintf(stderr, "Want to alloc color %d, index %d\n", b, i);
-            fprintf(stderr, "Got room for %d styles\n", numstyles);
             if (!XftColorAllocName(dpy, DefaultVisual(dpy, screen),
                                    DefaultColormap(dpy, screen), argv[i],
                                    &styles[b]))
@@ -542,10 +531,7 @@ main(int argc, char **argv)
         {
             XNextEvent(dpy, &ev);
             if (ev.type == Expose)
-            {
-                fprintf(stderr, "Expose!\n");
                 draw_everything();
-            }
         }
     }
 
