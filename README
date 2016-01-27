@@ -1,0 +1,35 @@
+                                ========
+                                bevelbar
+                                ========
+
+
+Draw an X11 status bar with fancy schmancy 1985-ish beveled borders.
+
+
+Installation
+------------
+
+The following C libraries are required:
+
+    - libx11
+    - libxft
+    - libxrandr
+
+The program expects to be run on a POSIX-ish operating system.
+
+To build the program and install it to /usr/local:
+
+    $ make
+    # make install
+
+
+Running
+-------
+
+The program waits for input on STDIN. Hence, you must combine it with
+some other program which creates said input:
+
+    $ other_program | bevelbar $args
+
+For a brief description of the input format and $args, please see
+example-run.sh.
