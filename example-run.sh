@@ -36,7 +36,8 @@ done | ./bevelbar \
 
 # Arguments:
 #
-# "left", "bottom"      Horizontal and vertical position
+# "left", "bottom"      Horizontal and vertical position (one of "left",
+#                       "center", "right" and "top", "bottom")
 #
 # "10", "5"             Horizontal and vertical margin (distance to screen edge)
 #
