@@ -34,13 +34,10 @@ static int horiz_pos, verti_pos;
 static int bs_global, bs_inner;
 
 static char *
-handle_stdin(char *existing, size_t *fill)
+handle_stdin(size_t *fill)
 {
     char *buf = NULL;
     size_t len = 0;
-
-    if (existing)
-        free(existing);
 
     *fill = 0;
 
@@ -560,7 +557,10 @@ main(int argc, char **argv)
 
         if (FD_ISSET(STDIN_FILENO, &fds))
         {
-            if ((inputbuf = handle_stdin(inputbuf, &inputbuf_len)) == NULL)
+            if (inputbuf)
+                free(inputbuf);
+
+            if ((inputbuf = handle_stdin(&inputbuf_len)) == NULL)
                 exit(EXIT_FAILURE);
 
             parse_input_and_draw();
