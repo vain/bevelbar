@@ -143,6 +143,9 @@ create_bars(void)
 
     for (i = 0; i < numbars; i++)
     {
+        /* The initial window position doesn't matter, so we move it off
+         * screen. Only when the user feeds us input on STDIN, we can
+         * move the windows to their correct places. */
         bars[i].win = XCreateWindow(
                 dpy, root, -10, -10, 5, 5, 0,
                 DefaultDepth(dpy, screen),
