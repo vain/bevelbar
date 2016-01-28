@@ -331,7 +331,7 @@ draw_global_border(void)
 }
 
 static void
-draw_everything(void)
+parse_input_and_draw(void)
 {
     size_t i = 0, start, len;
     int monitor, style;
@@ -562,14 +562,14 @@ main(int argc, char **argv)
             if ((inputbuf = handle_stdin(inputbuf, &inputbuf_len)) == NULL)
                 exit(EXIT_FAILURE);
 
-            draw_everything();
+            parse_input_and_draw();
         }
 
         while (XPending(dpy))
         {
             XNextEvent(dpy, &ev);
             if (ev.type == Expose)
-                draw_everything();
+                parse_input_and_draw();
         }
     }
 
