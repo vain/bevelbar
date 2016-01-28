@@ -194,9 +194,6 @@ draw_show(void)
 
     for (i = 0; i < numbars; i++)
     {
-        XCopyArea(dpy, bars[i].pm, bars[i].win, bars[i].gc, 0, 0,
-                  bars[i].dw, bars[i].dh, 0, 0);
-
         if (horiz_pos == -1)
             x = bars[i].mx + horiz_padding;
         else if (horiz_pos == 0)
@@ -210,6 +207,9 @@ draw_show(void)
             y = bars[i].my + bars[i].mh - bars[i].dh - verti_padding;
 
         XMoveResizeWindow(dpy, bars[i].win, x, y, bars[i].dw, bars[i].dh);
+
+        XCopyArea(dpy, bars[i].pm, bars[i].win, bars[i].gc, 0, 0,
+                  bars[i].dw, bars[i].dh, 0, 0);
     }
 }
 
