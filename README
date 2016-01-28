@@ -29,7 +29,12 @@ Running
 The program waits for input on STDIN. Hence, you must combine it with
 some other program which creates said input:
 
-    $ other_program | bevelbar $args
+    $ other_program | while sleep 0.1; do bevelbar $args; done
 
 For a brief description of the input format and $args, please see
 example-run.sh.
+
+bevelbar does not handle changes to your screen layout. When you add,
+remove or rearrange monitors, you have to restart the program. This is
+why I'm using a while-loop in the example above -- you can then simply
+issue a "killall bevelbar".
