@@ -199,6 +199,8 @@ draw_show(void)
 
         if (horiz_pos == -1)
             x = bars[i].mx + horiz_padding;
+        else if (horiz_pos == 0)
+            x = bars[i].mx + 0.5 * (bars[i].mw - bars[i].dw);
         else
             x = bars[i].mx + bars[i].mw - bars[i].dw - horiz_padding;
 
@@ -440,6 +442,8 @@ evaulate_args(int argc, char **argv)
 
     if (strncmp(argv[1], "left", strlen("left")) == 0)
         horiz_pos = -1;
+    else if (strncmp(argv[1], "center", strlen("center")) == 0)
+        horiz_pos = 0;
     else
         horiz_pos = 1;
 
