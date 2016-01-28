@@ -364,7 +364,8 @@ parse_input_and_draw(void)
                     monitor = inputbuf[i] - '0';
                     if (monitor < 0 || monitor >= numbars)
                     {
-                        fprintf(stderr, __NAME__": Input is garbage, aborting\n");
+                        fprintf(stderr, __NAME__": Invalid monitor '%c', aborting\n",
+                                inputbuf[i]);
                         return;
                     }
                     /* We're on a valid monitor, jump over following \n */
@@ -403,7 +404,7 @@ parse_input_and_draw(void)
                 style = inputbuf[i] - '0';
                 if (style < 0 || style >= numstyles)
                 {
-                    fprintf(stderr, __NAME__": Input is garbage, aborting\n");
+                    fprintf(stderr, __NAME__": Invalid style, aborting\n");
                     return;
                 }
                 start = i + 1;
