@@ -501,7 +501,7 @@ evaulate_args(int argc, char **argv)
             return false;
         }
 
-        for (b = 0, i = 13; i < argc; i++, b++)
+        for (b = 0, i = 13; i < argc && b < numstyles * 4; i++, b++)
         {
             if (!XftColorAllocName(dpy, DefaultVisual(dpy, screen),
                                    DefaultColormap(dpy, screen), argv[i],
