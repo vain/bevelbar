@@ -31,8 +31,8 @@ some other program which creates said input:
 
     $ other_program | while sleep 0.1; do bevelbar $args; done
 
-For a brief description of the input format and $args, please see
-example-run.sh.
+For a brief description of the input format and $args, please refer to
+the manpage or example-run.sh.
 
 bevelbar does not handle changes to your screen layout. When you add,
 remove or rearrange monitors, you have to restart the program. This is

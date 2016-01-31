@@ -1,0 +1,149 @@
+.TH bevelbar 1 "2016-01-31" "bevelbar" "User Commands"
+.\" --------------------------------------------------------------------
+.SH NAME
+bevelbar \- X11 status bar with beveled borders
+.\" --------------------------------------------------------------------
+.SH SYNOPSIS
+\fBbevelbar\fP \fICONFIGURATION ...\fP
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+Draw an X11 status bar. The program waits for input on \fISTDIN\fP, see
+format below.
+.\" --------------------------------------------------------------------
+.SH OPTIONS
+Colors are specified as strings that can be understood by
+\fBXftColorAllocName()\fP, e.g. \fB#112233\fP or \fBred\fP.
+.P
+Note: All of these options must be present in this exact order.
+.TP
+\fIhorizontal_alignment\fP
+.TQ
+\fIvertical_alignment\fP
+Must be one of \fBleft\fP, \fBcenter\fP, \fBright\fP, and \fBtop\fP,
+\fBbottom\fP, respectively. This tells \fBbevelbar\fP where to place the
+bar window. For each XRandR screen, one individual window will be
+created.
+.TP
+\fIhorizontal_margin\fP
+.TQ
+\fIvertical_margin\fP
+The windows' distances to screen edge in number of pixels. These options
+are integers. When a horizontal alignment of \fBcenter\fP is used, then
+\fIhorizontal_margin\fP is ignored.
+.TP
+\fIouter_bevel\fP
+.TQ
+\fIinner_bevel\fP
+Size in pixels of the bevel to draw. These options are integers. Can be
+0 to not draw any bevel at all. \fIinner_bevel\fP refers to the bevel of
+individual segments.
+.TP
+\fIinter_segment_factor\fP
+Segments can be separated by a small horizontal gap.
+\fIinter_segment_factor\fP will be multiplied by the font height to
+define that gap. Try values of 0, 0.5, and 1 to see what happens. This
+option is a floating point value.
+.TP
+\fIempty_segment_factor\fP
+Defines the size of empty segments. This value will be multiplied with
+the font height, just like \fIinter_segment_factor\fP. This option is a
+floating point value.
+.TP
+\fIfont\fP
+Xft font descriptor, e.g. \fBTerminus:pixelsize=10\fP.
+.TP
+\fIcol_empty\fP
+Color of empty segments.
+.TP
+\fIcol_outer_bright\fP
+.TQ
+\fIcol_outer_dark\fP
+Colors of the global outer border. The \(lqbright\(rq color will be used
+on the left and top, the \(lqdark\(rq color will be used at the bottom
+and on the right.
+.P
+Following these basic options, you can define different styles.
+Throughout your input data, you can switch styles. You must define at
+least one style. You can define 10 styles, tops. A style consists of
+four colors, all of which must be present:
+.TP
+\fIcol_segment_background\fP
+.TQ
+\fIcol_segment_foreground\fP
+Background color and text color.
+.TP
+\fIcol_segment_bright\fP
+.TQ
+\fIcol_segment_dark\fP
+Similar to the colors of the global outer border, these options set the
+colors of the borders of individual segments.
+.\" --------------------------------------------------------------------
+.SH "INPUT FORMAT"
+As soon as input is available on \fISTDIN\fP, \fBbevelbar\fP will read
+one complete input block and then draw it. This means that it will block
+until the block is complete. Each of the following commands must be
+terminated by a newline character and must not contain any leading or
+trailing white space.
+.P
+.IP \(bu 4
+An input block starts with an integer which designates the desired
+monitor to draw the following sub-block on. You can also use \fBa\fP to
+draw the same input on all monitors.
+.IP \(bu 4
+You can now define multiple segments. Each segment will have its own
+border. A segment has the format \fI<style><text>\fP (of course, this
+command has to be terminated by a newline). \fIstyle\fP is an integer to
+select one of the styles defined by your command line arguments. Style
+indexes start at 0, so the highest usable style index is 9.
+.IP \(bu 4
+Instead of actual text, you can also request an empty segment using a
+simple dash: \fB-\fP.
+.IP \(bu 4
+Multiple segments or empty segments can follow. To designate the end of
+input for this monitor, you must send an \fBe\fP.
+.IP \(bu 4
+You can now either select another monitor and supply more input, or you
+can terminate the input by sending an \fBf\fP. This final \fBf\fP causes
+the bar to be redrawn.
+.P
+Here's an example:
+.P
+\f(CW
+.nf
+\&0
+\&02016-01-31, current date using style 0
+\&1Using style 1 to draw this text
+\&0Back to style 0
+\&-
+\&0We have just drawn an empty segment
+\&e
+\&1
+\&0Now we're on monitor number 1, drawing with style 0
+\&e
+\&f
+.fi
+\fP
+.P
+Another example:
+.P
+\f(CW
+.nf
+\&a
+\&0This text appears on all monitors
+\&e
+\&f
+.fi
+\fP
+.\" --------------------------------------------------------------------
+.SH ENVIRONMENT
+.TP
+.B DISPLAY
+Target display.
+.\" --------------------------------------------------------------------
+.SH LICENSE
+\fBbevelbar\fP is released as \(lqPIZZA-WARE\(rq. See the accompanying
+\fILICENSE\fP file.
+.\" --------------------------------------------------------------------
+.SH HISTORY
+\fBbevelbar\fP was originally written by Peter Hofmann. The project
+was started in January 2016.
