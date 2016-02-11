@@ -28,10 +28,11 @@ static XftColor basic_colors[3], *styles = NULL;
 static int numstyles;
 static XftFont *font;
 static int font_height, font_baseline, horiz_margin;
-static double font_height_extra = 0.5, seg_spacing, seg_spacing_empty;
+static double font_height_extra = 0.5, seg_spacing_empty;
 static int horiz_padding, verti_padding;
 static int horiz_pos, verti_pos;
 static int bs_global, bs_inner;
+static int seg_margin;
 
 static char *
 handle_stdin(size_t *fill)
@@ -179,8 +180,11 @@ draw_init_pixmaps(void)
         /* Make room for global bevel border (on the left) */
         bars[i].dw = bs_global;
 
-        /* Make room for actual font + borders */
-        bars[i].dh = 2 * bs_global + 2 * bs_inner + font_height;
+        /* Apply first horizontal inter-segment spacing */
+        bars[i].dw += seg_margin;
+
+        /* Make room for actual font + borders + segment margin */
+        bars[i].dh = 2 * bs_global + 2 * bs_inner + font_height + 2 * seg_margin;
     }
 }
 
@@ -226,16 +230,6 @@ draw_empty(int monitor)
 }
 
 static void
-draw_discard_last_intersegment_spacing(int monitor)
-{
-    int i;
-
-    for (i = 0; i < numbars; i++)
-        if (i == monitor || monitor == -1)
-            bars[i].dw -= (int)(seg_spacing * font_height);
-}
-
-static void
 draw_text(int monitor, int style, size_t from, size_t len)
 {
     int i, j, w;
@@ -254,7 +248,7 @@ draw_text(int monitor, int style, size_t from, size_t len)
             /* Background fill */
             XSetForeground(dpy, bars[i].gc, styles[style * 4].pixel);
             XFillRectangle(dpy, bars[i].pm, bars[i].gc,
-                           bars[i].dw, bs_global,
+                           bars[i].dw, bs_global + seg_margin,
                            w + 2 * bs_inner, font_height + 2 * bs_inner);
 
             /* The text itself */
@@ -262,7 +256,7 @@ draw_text(int monitor, int style, size_t from, size_t len)
                                DefaultColormap(dpy, screen));
             XftDrawStringUtf8(xd, &styles[style * 4 + 1], font,
                               bars[i].dw + bs_inner + horiz_margin,
-                              font_baseline + bs_global + bs_inner,
+                              font_baseline + bs_global + bs_inner + seg_margin,
                               (XftChar8 *)&inputbuf[from], len);
             XftDrawDestroy(xd);
 
@@ -270,10 +264,12 @@ draw_text(int monitor, int style, size_t from, size_t len)
              * bevel border (for the sake of simplicity) */
             XSetForeground(dpy, bars[i].gc, styles[style * 4 + 3].pixel);
             XFillRectangle(dpy, bars[i].pm, bars[i].gc,
-                           bars[i].dw, bs_global + bs_inner + font_height,
+                           bars[i].dw,
+                           bs_global + bs_inner + font_height + seg_margin,
                            w + 2 * bs_inner, bs_inner);
             XFillRectangle(dpy, bars[i].pm, bars[i].gc,
-                           bars[i].dw + bs_inner + w, bs_global,
+                           bars[i].dw + bs_inner + w,
+                           bs_global + seg_margin,
                            bs_inner, font_height + bs_inner);
 
             /* Bright bevel */
@@ -281,20 +277,17 @@ draw_text(int monitor, int style, size_t from, size_t len)
             for (j = 0; j < bs_inner; j++)
             {
                 XDrawLine(dpy, bars[i].pm, bars[i].gc,
-                          bars[i].dw + j, bs_global,
-                          bars[i].dw + j, bs_global + 2 * bs_inner + font_height
-                                          - 1 - j);
+                          bars[i].dw + j, bs_global + seg_margin,
+                          bars[i].dw + j, bs_global + seg_margin
+                                          + 2 * bs_inner + font_height - 1 - j);
                 XDrawLine(dpy, bars[i].pm, bars[i].gc,
-                          bars[i].dw, bs_global + j,
-                          bars[i].dw + w + 2 * bs_inner - 1 - j, bs_global + j);
+                          bars[i].dw, bs_global + seg_margin + j,
+                          bars[i].dw + w + 2 * bs_inner - 1 - j,
+                          bs_global + seg_margin + j);
             }
 
             bars[i].dw += w + 2 * bs_inner;
-
-            /* Inter-segment spacing. Note that this might get
-             * subtracted later on if this was the very last segment to
-             * draw. */
-            bars[i].dw += (int)(seg_spacing * font_height);
+            bars[i].dw += seg_margin;
         }
     }
 }
@@ -377,11 +370,8 @@ parse_input_and_draw(void)
             case 1:
                 if (inputbuf[i] == 'e')
                 {
-                    /* We're finished with this monitor */
-                    draw_discard_last_intersegment_spacing(monitor);
-
-                    /* Go back to: Check for next monitor or end of
-                     * input. */
+                    /* We're finished with this monitor. Go back to:
+                     * Check for next monitor or end of input. */
                     state = 0;
                     i++;
                 }
@@ -459,7 +449,7 @@ evaulate_args(int argc, char **argv)
     bs_global = atoi(argv[5]);
     bs_inner = atoi(argv[6]);
 
-    seg_spacing = atof(argv[7]);
+    /* argv[7] to be read after load the font */
     seg_spacing_empty = atof(argv[8]);
 
     font = XftFontOpenName(dpy, screen, argv[9]);
@@ -480,6 +470,9 @@ evaulate_args(int argc, char **argv)
     font_baseline += (int)(0.5 * font_height_extra * font_height);
     font_height += (int)(font_height_extra * font_height);
     horiz_margin = 0.25 * font_height;
+
+    /* Now that we know the font height, we can calculate seg_margin */
+    seg_margin = (int)(atof(argv[7]) * font_height);
 
     for (b = 0, i = 10; i <= 12; i++, b++)
     {

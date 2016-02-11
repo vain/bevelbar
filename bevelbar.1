@@ -38,15 +38,14 @@ Size in pixels of the bevel to draw. These options are integers. Can be
 0 to not draw any bevel at all. \fIinner_bevel\fP refers to the bevel of
 individual segments.
 .TP
-\fIinter_segment_factor\fP
-Segments can be separated by a small horizontal gap.
-\fIinter_segment_factor\fP will be multiplied by the font height to
-define that gap. Try values of 0, 0.5, and 1 to see what happens. This
-option is a floating point value.
+\fIseg_margin\fP
+Segments can have a margin (both horizontally and vertically) around
+them which is set by this option. \fIseg_margin\fP will be multiplied by
+the font height. This option is a floating point value.
 .TP
 \fIempty_segment_factor\fP
 Defines the size of empty segments. This value will be multiplied with
-the font height, just like \fIinter_segment_factor\fP. This option is a
+the font height, just like \fIseg_margin\fP. This option is a
 floating point value.
 .TP
 \fIfont\fP
