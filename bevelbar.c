@@ -28,11 +28,11 @@ static XftColor basic_colors[3], *styles = NULL;
 static int numstyles;
 static XftFont *font;
 static int font_height, font_baseline, horiz_margin;
-static double font_height_extra = 0.5, seg_spacing_empty;
+static double font_height_extra = 0.5;
 static int horiz_padding, verti_padding;
 static int horiz_pos, verti_pos;
 static int bs_global, bs_inner;
-static int seg_margin;
+static int seg_margin, seg_size_empty;
 
 static char *
 handle_stdin(size_t *fill)
@@ -226,7 +226,7 @@ draw_empty(int monitor)
 
     for (i = 0; i < numbars; i++)
         if (i == monitor || monitor == -1)
-            bars[i].dw += (int)(seg_spacing_empty * font_height);
+            bars[i].dw += seg_size_empty;
 }
 
 static void
@@ -449,8 +449,8 @@ evaulate_args(int argc, char **argv)
     bs_global = atoi(argv[5]);
     bs_inner = atoi(argv[6]);
 
-    /* argv[7] to be read after load the font */
-    seg_spacing_empty = atof(argv[8]);
+    seg_margin = atoi(argv[7]);
+    seg_size_empty = atoi(argv[8]);
 
     font = XftFontOpenName(dpy, screen, argv[9]);
     if (!font)
@@ -470,9 +470,6 @@ evaulate_args(int argc, char **argv)
     font_baseline += (int)(0.5 * font_height_extra * font_height);
     font_height += (int)(font_height_extra * font_height);
     horiz_margin = 0.25 * font_height;
-
-    /* Now that we know the font height, we can calculate seg_margin */
-    seg_margin = (int)(atof(argv[7]) * font_height);
 
     for (b = 0, i = 10; i <= 12; i++, b++)
     {

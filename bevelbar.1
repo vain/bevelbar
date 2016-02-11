@@ -40,13 +40,12 @@ individual segments.
 .TP
 \fIseg_margin\fP
 Segments can have a margin (both horizontally and vertically) around
-them which is set by this option. \fIseg_margin\fP will be multiplied by
-the font height. This option is a floating point value.
+them which is set by this option. This option is an integer value and
+measured in pixels.
 .TP
-\fIempty_segment_factor\fP
-Defines the size of empty segments. This value will be multiplied with
-the font height, just like \fIseg_margin\fP. This option is a
-floating point value.
+\fIseg_size_empty\fP
+Defines the horizontal size of empty segments. This option is an integer
+value and measured in pixels.
 .TP
 \fIfont\fP
 Xft font descriptor, e.g. \fBTerminus:pixelsize=10\fP.
