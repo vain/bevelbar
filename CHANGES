@@ -1,5 +1,13 @@
 Release history for bevelbar
 
+next
+  [Changed]
+  - "Inter segment spacing" is now "segment margin": Around a segment,
+    there is both a horizontal and a vertical margin.
+  - Both the size of the (new) segment margin and the size of empty
+    segments are now measured in pixels (instead of depending on the
+    font size).
+
 v16.02  2016-02-01
   [Added]
   - Initial release.
