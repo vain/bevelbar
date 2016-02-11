@@ -1,6 +1,6 @@
 #!/bin/bash
 
-while sleep 1
+while sleep 0.25
 do
     echo 0                                # Monitor 0
     echo 0"$(date +%s)"                   # Select style 0
@@ -23,10 +23,10 @@ done | ./bevelbar \
     left bottom \
     10 5 \
     3 2 \
-    0.25 0.5 \
+    2 20 \
     'Terminus:pixelsize=10' \
     '#a3a3a3' \
-    '#b1b1b1' '#363636' \
+    '#e1e1e1' '#262626' \
     '#bebebe' '#000000' '#e1e1e1' '#747474' \
     '#bebebe' '#000000' '#747474' '#e1e1e1' \
-    '#a11212' '#ffffff' '#e61919' '#961111'
+    '#a11212' '#ffffff' '#e61919' '#570A0A'
