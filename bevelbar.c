@@ -7,6 +7,7 @@
 #include <X11/Xlib.h>
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 struct BarWindow
 {
@@ -191,29 +192,35 @@ draw_init_pixmaps(void)
 static void
 draw_show(void)
 {
-    int i, x, y;
+    int i, x, y, w;
 
     if (inputbuf_len <= 0)
         return;
 
     for (i = 0; i < numbars; i++)
     {
+        /* Confine the bar to this monitor (minus padding). We don't do
+         * this in Y direction because we don't expect the user to use a
+         * font size that covers the whole screen. */
+        w = bars[i].dw;
+        w = MIN(bars[i].mw - 2 * horiz_padding, w);
+
         if (horiz_pos == -1)
             x = bars[i].mx + horiz_padding;
         else if (horiz_pos == 0)
-            x = bars[i].mx + 0.5 * (bars[i].mw - bars[i].dw);
+            x = bars[i].mx + 0.5 * (bars[i].mw - w);
         else
-            x = bars[i].mx + bars[i].mw - bars[i].dw - horiz_padding;
+            x = bars[i].mx + bars[i].mw - w - horiz_padding;
 
         if (verti_pos == -1)
             y = bars[i].my + verti_padding;
         else
             y = bars[i].my + bars[i].mh - bars[i].dh - verti_padding;
 
-        XMoveResizeWindow(dpy, bars[i].win, x, y, bars[i].dw, bars[i].dh);
+        XMoveResizeWindow(dpy, bars[i].win, x, y, w, bars[i].dh);
 
         XCopyArea(dpy, bars[i].pm, bars[i].win, bars[i].gc, 0, 0,
-                  bars[i].dw, bars[i].dh, 0, 0);
+                  w, bars[i].dh, 0, 0);
     }
 }
 

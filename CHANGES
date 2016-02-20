@@ -1,6 +1,9 @@
 Release history for bevelbar
 
 next
+  [Fixed]
+  - Overlong bars no longer appear partially on the wrong monitor.
+
   [Changed]
   - "Inter segment spacing" is now "segment margin": Around a segment,
     there is both a horizontal and a vertical margin.
