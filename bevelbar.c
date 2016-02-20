@@ -30,7 +30,7 @@ static int numstyles;
 static XftFont *font;
 static int font_height, font_baseline, horiz_margin;
 static double font_height_extra = 0.5;
-static int horiz_padding, verti_padding;
+static int horiz_margin, verti_margin;
 static int horiz_pos, verti_pos;
 static int bs_global, bs_inner;
 static int seg_margin, seg_size_empty;
@@ -199,23 +199,23 @@ draw_show(void)
 
     for (i = 0; i < numbars; i++)
     {
-        /* Confine the bar to this monitor (minus padding). We don't do
+        /* Confine the bar to this monitor (minus margin). We don't do
          * this in Y direction because we don't expect the user to use a
          * font size that covers the whole screen. */
         w = bars[i].dw;
-        w = MIN(bars[i].mw - 2 * horiz_padding, w);
+        w = MIN(bars[i].mw - 2 * horiz_margin, w);
 
         if (horiz_pos == -1)
-            x = bars[i].mx + horiz_padding;
+            x = bars[i].mx + horiz_margin;
         else if (horiz_pos == 0)
             x = bars[i].mx + 0.5 * (bars[i].mw - w);
         else
-            x = bars[i].mx + bars[i].mw - w - horiz_padding;
+            x = bars[i].mx + bars[i].mw - w - horiz_margin;
 
         if (verti_pos == -1)
-            y = bars[i].my + verti_padding;
+            y = bars[i].my + verti_margin;
         else
-            y = bars[i].my + bars[i].mh - bars[i].dh - verti_padding;
+            y = bars[i].my + bars[i].mh - bars[i].dh - verti_margin;
 
         XMoveResizeWindow(dpy, bars[i].win, x, y, w, bars[i].dh);
 
@@ -450,8 +450,8 @@ evaulate_args(int argc, char **argv)
     else
         verti_pos = 1;
 
-    horiz_padding = atoi(argv[3]);
-    verti_padding = atoi(argv[4]);
+    horiz_margin = atoi(argv[3]);
+    verti_margin = atoi(argv[4]);
 
     bs_global = atoi(argv[5]);
     bs_inner = atoi(argv[6]);
