@@ -90,10 +90,31 @@ compare_barwindows(const void *a, const void *b)
     return 0;
 }
 
+bool
+create_bars_is_duplicate(XRRCrtcInfo *ci, bool *chosen, XRRScreenResources *sr)
+{
+    XRRCrtcInfo *o;
+    int i;
+
+    for (i = 0; i < sr->ncrtc; i++)
+    {
+        if (chosen[i])
+        {
+            o = XRRGetCrtcInfo(dpy, sr, sr->crtcs[i]);
+            if (o->x == ci->x && o->y == ci->y &&
+                o->width == ci->width && o->height == ci->height)
+                return true;
+        }
+    }
+
+    return false;
+}
+
 static struct BarWindow *
 create_bars(void)
 {
     int c, i;
+    bool *chosen = NULL;
     XRRCrtcInfo *ci;
     XRRScreenResources *sr;
     struct BarWindow *bars;
@@ -111,11 +132,24 @@ create_bars(void)
     }
 
     numbars = 0;
+    chosen = calloc(sr->ncrtc, sizeof (bool));
+    if (chosen == NULL)
+    {
+        fprintf(stderr, __NAME__": Could not allocate memory for pointer "
+                "chosen\n");
+        return NULL;
+    }
+
     for (c = 0; c < sr->ncrtc; c++)
     {
         ci = XRRGetCrtcInfo(dpy, sr, sr->crtcs[c]);
         if (ci == NULL || ci->noutput == 0 || ci->mode == None)
             continue;
+
+        if (create_bars_is_duplicate(ci, chosen, sr))
+            continue;
+
+        chosen[c] = true;
         numbars++;
     }
 
@@ -130,16 +164,19 @@ create_bars(void)
     i = 0;
     for (c = 0; c < sr->ncrtc; c++)
     {
-        ci = XRRGetCrtcInfo(dpy, sr, sr->crtcs[c]);
-        if (ci == NULL || ci->noutput == 0 || ci->mode == None)
-            continue;
+        if (chosen[c])
+        {
+            ci = XRRGetCrtcInfo(dpy, sr, sr->crtcs[c]);
 
-        bars[i].mx = ci->x;
-        bars[i].my = ci->y;
-        bars[i].mw = ci->width;
-        bars[i].mh = ci->height;
-        i++;
+            bars[i].mx = ci->x;
+            bars[i].my = ci->y;
+            bars[i].mw = ci->width;
+            bars[i].mh = ci->height;
+
+            i++;
+        }
     }
+    free(chosen);
 
     qsort(bars, numbars, sizeof (struct BarWindow), compare_barwindows);
 

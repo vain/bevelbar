@@ -1,5 +1,9 @@
 Release history for bevelbar
 
+next
+  [Changed]
+  - Try to detect duplicated/cloned monitors.
+
 v16.03  2016-03-13
   [Fixed]
   - Overlong bars no longer appear partially on the wrong monitor.
