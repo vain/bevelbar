@@ -1,5 +1,9 @@
 Release history for bevelbar
 
+next
+  [Added]
+  - Support for displaying farbfeld images.
+
 v16.06  2016-06-26
   [Changed]
   - Try to detect duplicated/cloned monitors.

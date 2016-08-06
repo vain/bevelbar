@@ -1,4 +1,6 @@
+#include <arpa/inet.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -274,6 +276,144 @@ draw_empty(int monitor)
 }
 
 static void
+draw_image(int monitor, int style, size_t from, size_t len)
+{
+    size_t at_in, at_out;
+    int i, j;
+    char *path = NULL;
+    FILE *fp = NULL;
+    uint32_t hdr[4], width, height, *ximg_data = NULL, x, y;
+    uint16_t *ffimg = NULL;
+    XImage *ximg;
+
+    path = calloc(len + 1, sizeof (char));
+    if (!path)
+    {
+        fprintf(stderr, __NAME__": Could not allocate memory for image path\n");
+        goto cleanout;
+    }
+
+    for (at_in = from, at_out = 0; at_in < from + len; at_in++, at_out++)
+        path[at_out] = inputbuf[at_in];
+
+    fp = fopen(path, "r");
+    if (!fp)
+    {
+        fprintf(stderr, __NAME__": Could not open image file '%s'\n", path);
+        goto cleanout;
+    }
+
+    if (fread(hdr, sizeof (uint32_t), 4, fp) != 4)
+    {
+        fprintf(stderr, __NAME__": Could not read farbfeld header from '%s'\n",
+                path);
+        goto cleanout;
+    }
+
+    width = ntohl(hdr[2]);
+    height = ntohl(hdr[3]);
+
+    ffimg = calloc(width * height * 4, sizeof (uint16_t));
+    if (!ffimg)
+    {
+        fprintf(stderr, __NAME__": Could not allocate memory, ffimg for '%s'\n",
+                path);
+        goto cleanout;
+    }
+
+    ximg_data = calloc(width * height, sizeof (uint32_t));
+    if (!ximg_data)
+    {
+        fprintf(stderr, __NAME__": Could not allocate memory, ximg_data for '%s'\n",
+                path);
+        goto cleanout;
+    }
+
+    if (fread(ffimg, width * height * 4 * sizeof (uint16_t), 1, fp) != 1)
+    {
+        fprintf(stderr, __NAME__": Unexpected EOF when reading '%s'\n", path);
+        goto cleanout;
+    }
+
+    /* Convert the farbfeld image to something XCreateImage can
+     * understand. */
+    for (y = 0; y < height; y++)
+    {
+        for (x = 0; x < width; x++)
+        {
+            ximg_data[y * width + x] =
+                ((ntohs(ffimg[(y * width + x) * 4    ]) / 256) << 16) |
+                ((ntohs(ffimg[(y * width + x) * 4 + 1]) / 256) << 8) |
+                 (ntohs(ffimg[(y * width + x) * 4 + 2]) / 256);
+        }
+    }
+
+    ximg = XCreateImage(dpy, DefaultVisual(dpy, screen), 24, ZPixmap, 0,
+                        (char *)ximg_data, width, height, 32, 0);
+
+    for (i = 0; i < numbars; i++)
+    {
+        if (i == monitor || monitor == -1)
+        {
+            XPutImage(dpy, bars[i].pm, bars[i].gc, ximg,
+                      0, 0,
+                      bars[i].dw + bs_inner, bs_global + bs_inner + seg_margin,
+                      width, height);
+
+            /* TODO, Refactor: These two bevel blocks are identical for
+             * draw_image() and draw_text(). */
+
+            /* Dark bevel, parts of this will be overdrawn by the bright
+             * bevel border (for the sake of simplicity) */
+            XSetForeground(dpy, bars[i].gc, styles[style * 4 + 3].pixel);
+            XFillRectangle(dpy, bars[i].pm, bars[i].gc,
+                           bars[i].dw,
+                           bs_global + bs_inner + font_height + seg_margin,
+                           width + 2 * bs_inner, bs_inner);
+            XFillRectangle(dpy, bars[i].pm, bars[i].gc,
+                           bars[i].dw + bs_inner + width,
+                           bs_global + seg_margin,
+                           bs_inner, font_height + bs_inner);
+
+            /* Bright bevel */
+            XSetForeground(dpy, bars[i].gc, styles[style * 4 + 2].pixel);
+            for (j = 0; j < bs_inner; j++)
+            {
+                XDrawLine(dpy, bars[i].pm, bars[i].gc,
+                          bars[i].dw + j, bs_global + seg_margin,
+                          bars[i].dw + j, bs_global + seg_margin
+                                          + 2 * bs_inner + font_height - 1 - j);
+                XDrawLine(dpy, bars[i].pm, bars[i].gc,
+                          bars[i].dw, bs_global + seg_margin + j,
+                          bars[i].dw + width + 2 * bs_inner - 1 - j,
+                          bs_global + seg_margin + j);
+            }
+
+            bars[i].dw += width + 2 * bs_inner;
+            bars[i].dw += seg_margin;
+        }
+    }
+
+    /* Note: XDestroyImage() also frees ximg_data, so we reset it to
+     * NULL to avoid a double-free in cleanout. */
+    XDestroyImage(ximg);
+    ximg_data = NULL;
+
+cleanout:
+    if (ximg_data)
+        free(ximg_data);
+
+    if (ffimg)
+        free(ffimg);
+
+    if (fp)
+        fclose(fp);
+
+    if (path)
+        free(path);
+}
+
+static void
 draw_text(int monitor, int style, size_t from, size_t len)
 {
     int i, j, w;
@@ -424,6 +564,14 @@ parse_input_and_draw(void)
                     draw_empty(monitor);
                     i++;
                 }
+                else if (inputbuf[i] == 'i')
+                {
+                    /* "i" means "render an image file". What follows
+                     * after the "i" is a style index because the image
+                     * still needs an inner bevel. After that index the
+                     * path to the file follows. */
+                    state = 4;
+                }
                 else
                 {
                     /* Styled input follows. Stay at the current
@@ -450,6 +598,28 @@ parse_input_and_draw(void)
                 if (inputbuf[i] == '\n')
                 {
                     draw_text(monitor, style, start, len);
+                    state = 1;
+                }
+                else
+                    len++;
+                break;
+
+            case 4:
+                style = inputbuf[i] - '0';
+                if (style < 0 || style >= numstyles)
+                {
+                    fprintf(stderr, __NAME__": Invalid style, aborting\n");
+                    return;
+                }
+                start = i + 1;
+                len = 0;
+                state = 5;
+                break;
+
+            case 5:
+                if (inputbuf[i] == '\n')
+                {
+                    draw_image(monitor, style, start, len);
                     state = 1;
                 }
                 else

@@ -96,6 +96,13 @@ indexes start at 0, so the highest usable style index is 9.
 Instead of actual text, you can also request an empty segment using a
 simple dash: \fB-\fP.
 .IP \(bu 4
+Alternatively, you can begin the line with \fBi\fP, followed by a
+\fIstyle\fP as described above. After these two characters, a path to a
+farbfeld image is expected. For image format and tools please refer to
+.UR http://git.suckless.org/farbfeld/
+suckless.org
+.UE .
+.IP \(bu 4
 Multiple segments or empty segments can follow. To designate the end of
 input for this monitor, you must send an \fBe\fP.
 .IP \(bu 4
@@ -127,6 +134,7 @@ Another example:
 .nf
 \&a
 \&0This text appears on all monitors
+\&i2/tmp/some_image.ff
 \&e
 \&f
 .fi
