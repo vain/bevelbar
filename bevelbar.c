@@ -313,7 +313,6 @@ draw_inner_border(int monitor, int style, int width)
 static void
 draw_image(int monitor, int style, size_t from, size_t len)
 {
-    size_t at_in, at_out;
     int i;
     char *path = NULL;
     FILE *fp = NULL;
@@ -327,9 +326,7 @@ draw_image(int monitor, int style, size_t from, size_t len)
         fprintf(stderr, __NAME__": Could not allocate memory for image path\n");
         goto cleanout;
     }
-
-    for (at_in = from, at_out = 0; at_in < from + len; at_in++, at_out++)
-        path[at_out] = inputbuf[at_in];
+    memmove(path, inputbuf + from, len);
 
     fp = fopen(path, "r");
     if (!fp)
