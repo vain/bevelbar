@@ -140,6 +140,36 @@ Another example:
 .fi
 \fP
 .\" --------------------------------------------------------------------
+.SH "IMAGE FILES"
+As described above, you can instruct \fBbevelbar\fP to read a farbfeld
+image file. It is important to understand that \fBbevelbar\fP will
+probably read this file multiple times and you, as a client, do not know
+when this is going to happen. This means that you \fBmust not\fP delete
+the file after you \(lqsent\(rq it to \fBbevelbar\fP. Furthermore, any
+updates to the image should be done atomically.
+.P
+A clean way to handle these issues is this:
+.P
+\f(CW
+.nf
+\&while sleep 10
+\&do
+\&    create_new_image >/tmp/my_image.new
+\&    mv /tmp/my_image.{new,ff}
+\&
+\&    echo a
+\&    echo i0/tmp/my_image.ff
+\&    echo e
+\&    echo f
+\&done
+.fi
+\fP
+.P
+The image will be updated every 10 seconds. Between that, the file will
+still be available. When it does get updated, the new image will first
+be written to a temporary file and then renamed to the actual file name.
+This is an atomic operation.
+.\" --------------------------------------------------------------------
 .SH ENVIRONMENT
 .TP
 .B DISPLAY
