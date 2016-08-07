@@ -276,10 +276,45 @@ draw_empty(int monitor)
 }
 
 static void
+draw_inner_border(int monitor, int style, int width)
+{
+    int i;
+
+    /* Dark bevel, parts of this will be overdrawn by the bright
+     * bevel border (for the sake of simplicity) */
+    XSetForeground(dpy, bars[monitor].gc, styles[style * 4 + 3].pixel);
+    XFillRectangle(dpy, bars[monitor].pm, bars[monitor].gc,
+                   bars[monitor].dw,
+                   bs_global + bs_inner + font_height + seg_margin,
+                   width + 2 * bs_inner, bs_inner);
+    XFillRectangle(dpy, bars[monitor].pm, bars[monitor].gc,
+                   bars[monitor].dw + bs_inner + width,
+                   bs_global + seg_margin,
+                   bs_inner, font_height + bs_inner);
+
+    /* Bright bevel */
+    XSetForeground(dpy, bars[monitor].gc, styles[style * 4 + 2].pixel);
+    for (i = 0; i < bs_inner; i++)
+    {
+        XDrawLine(dpy, bars[monitor].pm, bars[monitor].gc,
+                  bars[monitor].dw + i, bs_global + seg_margin,
+                  bars[monitor].dw + i, bs_global + seg_margin
+                                  + 2 * bs_inner + font_height - 1 - i);
+        XDrawLine(dpy, bars[monitor].pm, bars[monitor].gc,
+                  bars[monitor].dw, bs_global + seg_margin + i,
+                  bars[monitor].dw + width + 2 * bs_inner - 1 - i,
+                  bs_global + seg_margin + i);
+    }
+
+    bars[monitor].dw += width + 2 * bs_inner;
+    bars[monitor].dw += seg_margin;
+}
+
+static void
 draw_image(int monitor, int style, size_t from, size_t len)
 {
     size_t at_in, at_out;
-    int i, j;
+    int i;
     char *path = NULL;
     FILE *fp = NULL;
     uint32_t hdr[4], width, height, *ximg_data = NULL, x, y;
@@ -360,37 +395,7 @@ draw_image(int monitor, int style, size_t from, size_t len)
                       bars[i].dw + bs_inner, bs_global + bs_inner + seg_margin,
                       width, height);
 
-            /* TODO, Refactor: These two bevel blocks are identical for
-             * draw_image() and draw_text(). */
-
-            /* Dark bevel, parts of this will be overdrawn by the bright
-             * bevel border (for the sake of simplicity) */
-            XSetForeground(dpy, bars[i].gc, styles[style * 4 + 3].pixel);
-            XFillRectangle(dpy, bars[i].pm, bars[i].gc,
-                           bars[i].dw,
-                           bs_global + bs_inner + font_height + seg_margin,
-                           width + 2 * bs_inner, bs_inner);
-            XFillRectangle(dpy, bars[i].pm, bars[i].gc,
-                           bars[i].dw + bs_inner + width,
-                           bs_global + seg_margin,
-                           bs_inner, font_height + bs_inner);
-
-            /* Bright bevel */
-            XSetForeground(dpy, bars[i].gc, styles[style * 4 + 2].pixel);
-            for (j = 0; j < bs_inner; j++)
-            {
-                XDrawLine(dpy, bars[i].pm, bars[i].gc,
-                          bars[i].dw + j, bs_global + seg_margin,
-                          bars[i].dw + j, bs_global + seg_margin
-                                          + 2 * bs_inner + font_height - 1 - j);
-                XDrawLine(dpy, bars[i].pm, bars[i].gc,
-                          bars[i].dw, bs_global + seg_margin + j,
-                          bars[i].dw + width + 2 * bs_inner - 1 - j,
-                          bs_global + seg_margin + j);
-            }
-
-            bars[i].dw += width + 2 * bs_inner;
-            bars[i].dw += seg_margin;
+            draw_inner_border(i, style, width);
         }
     }
 
@@ -416,7 +421,7 @@ cleanout:
 static void
 draw_text(int monitor, int style, size_t from, size_t len)
 {
-    int i, j, w;
+    int i, w;
     XftDraw *xd;
     XGlyphInfo ext;
 
@@ -444,34 +449,7 @@ draw_text(int monitor, int style, size_t from, size_t len)
                               (XftChar8 *)&inputbuf[from], len);
             XftDrawDestroy(xd);
 
-            /* Dark bevel, parts of this will be overdrawn by the bright
-             * bevel border (for the sake of simplicity) */
-            XSetForeground(dpy, bars[i].gc, styles[style * 4 + 3].pixel);
-            XFillRectangle(dpy, bars[i].pm, bars[i].gc,
-                           bars[i].dw,
-                           bs_global + bs_inner + font_height + seg_margin,
-                           w + 2 * bs_inner, bs_inner);
-            XFillRectangle(dpy, bars[i].pm, bars[i].gc,
-                           bars[i].dw + bs_inner + w,
-                           bs_global + seg_margin,
-                           bs_inner, font_height + bs_inner);
-
-            /* Bright bevel */
-            XSetForeground(dpy, bars[i].gc, styles[style * 4 + 2].pixel);
-            for (j = 0; j < bs_inner; j++)
-            {
-                XDrawLine(dpy, bars[i].pm, bars[i].gc,
-                          bars[i].dw + j, bs_global + seg_margin,
-                          bars[i].dw + j, bs_global + seg_margin
-                                          + 2 * bs_inner + font_height - 1 - j);
-                XDrawLine(dpy, bars[i].pm, bars[i].gc,
-                          bars[i].dw, bs_global + seg_margin + j,
-                          bars[i].dw + w + 2 * bs_inner - 1 - j,
-                          bs_global + seg_margin + j);
-            }
-
-            bars[i].dw += w + 2 * bs_inner;
-            bars[i].dw += seg_margin;
+            draw_inner_border(i, style, w);
         }
     }
 }
