@@ -3,7 +3,8 @@
                                 ========
 
 
-Draw an X11 status bar with fancy schmancy 1985-ish beveled borders.
+Draw an X11 status bar with fancy schmancy 1985-ish beveled borders. It
+can display plain text or farbfeld images.
 
 
 Installation
