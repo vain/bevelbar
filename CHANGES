@@ -4,6 +4,11 @@ next
   [Added]
   - Support for displaying farbfeld images.
 
+  [Changed]
+  - Command line arguments have been reworked. They now all have default
+    values and can be set using getopt. This definitely is backwards
+    incompatible.
+
 v16.06  2016-06-26
   [Changed]
   - Try to detect duplicated/cloned monitors.

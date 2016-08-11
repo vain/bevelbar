@@ -20,13 +20,15 @@ do
 
     echo f
 done | ./bevelbar \
-    left bottom \
-    10 5 \
-    3 2 \
-    2 20 \
-    'Terminus:pixelsize=10' \
-    '#a3a3a3' \
-    '#e1e1e1' '#262626' \
-    '#bebebe' '#000000' '#e1e1e1' '#747474' \
-    '#bebebe' '#000000' '#747474' '#e1e1e1' \
-    '#a11212' '#ffffff' '#e61919' '#570A0A'
+    -h left -v top \
+    -H 10 -V 5 \
+    -b 3 -B 2 \
+    -m 2 -e 20 \
+    -f 'Terminus:pixelsize=10' \
+    -p '#a3a3a3' \
+    -o '#e1e1e1' -O '#262626' \
+    -s 0 -c '#bebebe' -c '#000000' -c '#e1e1e1' -c '#747474' \
+    -s 1 -c '#bebebe' -c '#000000' -c '#747474' -c '#e1e1e1' \
+    -s 2 -c '#a11212' -c '#ffffff' -c '#e61919' -c '#570A0A'
+
+# Note that all arguments to bevelbar are optional.

@@ -4,7 +4,7 @@
 bevelbar \- X11 status bar with beveled borders
 .\" --------------------------------------------------------------------
 .SH SYNOPSIS
-\fBbevelbar\fP \fICONFIGURATION ...\fP
+\fBbevelbar\fP [\fIOPTIONS ...\fP]
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 Draw an X11 status bar. The program waits for input on \fISTDIN\fP, see
@@ -14,55 +14,60 @@ format below.
 Colors are specified as strings that can be understood by
 \fBXftColorAllocName()\fP, e.g. \fB#112233\fP or \fBred\fP.
 .P
-Note: All of these options must be present in this exact order.
+Basic properties and colors:
 .TP
-\fIhorizontal_alignment\fP
+\fB\-h\fP \fIhorizontal_position\fP
 .TQ
-\fIvertical_alignment\fP
-Must be one of \fBleft\fP, \fBcenter\fP, \fBright\fP, and \fBtop\fP,
-\fBbottom\fP, respectively. This tells \fBbevelbar\fP where to place the
-bar window. For each XRandR screen, one individual window will be
-created.
+\fB\-v\fP \fIvertical_position\fP
+Specifiy the horizontal and vertical position of the bar.
+\fIhorizontal_position\fP must be one of \fBleft\fP, \fBcenter\fP or
+\fBright\fP. \fIvertical_position\fP must be one of \fBtop\fP or
+\fBbottom\fP. Defaults to \fBcenter\fP and \fBbottom\fP.
 .TP
-\fIhorizontal_margin\fP
+\fB\-H\fP \fIhorizontal_margin\fP
 .TQ
-\fIvertical_margin\fP
+\fB\-V\fP \fIvertical_margin\fP
 The windows' minimum distances to screen edge in number of pixels. These
-options are integers.
+options are integers. Both default values are \fB5\fP.
 .TP
-\fIouter_bevel\fP
+\fB\-b\fP \fIouter_bevel\fP
 .TQ
-\fIinner_bevel\fP
+\fB\-B\fP \fIinner_bevel\fP
 Size in pixels of the bevel to draw. These options are integers. Can be
 0 to not draw any bevel at all. \fIinner_bevel\fP refers to the bevel of
-individual segments.
+individual segments. Both default values are \fB2\fP.
 .TP
-\fIseg_margin\fP
+\fB\-m\fP \fIseg_margin\fP
 Segments can have a margin (both horizontally and vertically) around
 them which is set by this option. This option is an integer value and
-measured in pixels.
+measured in pixels. Defaults to \fB1\fP.
 .TP
-\fIseg_size_empty\fP
+\fB\-e\fP \fIseg_size_empty\fP
 Defines the horizontal size of empty segments. This option is an integer
-value and measured in pixels.
+value and measured in pixels. Defaults to \fB7\fP.
 .TP
-\fIfont\fP
-Xft font descriptor, e.g. \fBTerminus:pixelsize=10\fP.
+\fB\-f\fP \fIfont\fP
+Xft font descriptor. Defaults to \fBfixed:pixelsize=13:style=bold\fP.
 .TP
-\fIcol_empty\fP
-Color of empty segments.
+\fB\-p\fP \fIcol_plateau\fP
+Color of the \(lqplateau\(rq. This is the space between and around
+segments. Defaults to \fB#a0a0a0\fP.
 .TP
-\fIcol_outer_bright\fP
+\fB\-o\fP \fIcol_outer_bright\fP
 .TQ
-\fIcol_outer_dark\fP
+\fB\-O\fP \fIcol_outer_dark\fP
 Colors of the global outer border. The \(lqbright\(rq color will be used
 on the left and top, the \(lqdark\(rq color will be used at the bottom
-and on the right.
+and on the right. Default values are \fB#d6d6d6\fP and \fB#535353\fP.
 .P
 Following these basic options, you can define different styles.
-Throughout your input data, you can switch styles. You must define at
-least one style. You can define 10 styles, tops. A style consists of
-four colors, all of which must be present:
+Throughout your input data, you can switch styles. Ten styles are
+available, six of which have default values (see below).
+.P
+You first use \fB\-s\fP \fIindex\fP to select a style to change. Style
+indexes range from 0 to 9, inclusively. After that, you use \fB\-c\fP
+\fIcolor\fP up to four times to change the colors of the selected style.
+The colors are use like this (and in this order):
 .TP
 \fIcol_segment_background\fP
 .TQ
@@ -74,6 +79,23 @@ Background color and text color.
 \fIcol_segment_dark\fP
 Similar to the colors of the global outer border, these options set the
 colors of the borders of individual segments.
+.P
+For example, to set style \fB7\fP to a background color of \fBred\fP, a
+text color of \fBgreen\fP, a bright segment color of \fByellow\fP, and a
+dark segment color of \fBblack\fP, you would have to use \fB\-s 7 \-c
+red \-c green \-c yellow \-c black\fP.
+.P
+As mentioned above, there are six predefined styles. They have the
+following values:
+.P
+.nf
+\-s 0 \-c "#cbaa94" \-c "#000000" \-c "#d6d6d6" \-c "#535353"
+\-s 1 \-c "#a68b79" \-c "#000000" \-c "#535353" \-c "#d6d6d6"
+\-s 2 \-c "#a0a0a0" \-c "#000000" \-c "#d6d6d6" \-c "#535353"
+\-s 3 \-c "#828282" \-c "#000000" \-c "#535353" \-c "#d6d6d6"
+\-s 4 \-c "#ff0000" \-c "#ffffff" \-c "#d6d6d6" \-c "#535353"
+\-s 5 \-c "#ff0000" \-c "#ffffff" \-c "#535353" \-c "#d6d6d6"
+.fi
 .\" --------------------------------------------------------------------
 .SH "INPUT FORMAT"
 As soon as input is available on \fISTDIN\fP, \fBbevelbar\fP will read

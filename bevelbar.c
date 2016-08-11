@@ -11,6 +11,9 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+#define NUM_STYLES 10
+#define PER_STYLE 4
+
 struct BarWindow
 {
     Window win;
@@ -27,10 +30,9 @@ static struct BarWindow *bars;
 static int numbars;
 static char *inputbuf = NULL;
 static size_t inputbuf_len = 0;
-static XftColor basic_colors[3], *styles = NULL;
-static int numstyles;
+static XftColor basic_colors[3] = {0}, styles[NUM_STYLES * PER_STYLE] = {0};
 static XftFont *font;
-static int font_height, font_baseline, horiz_margin;
+static int font_height, font_baseline, font_horiz_margin;
 static double font_height_extra = 0.5;
 static int horiz_margin, verti_margin;
 static int horiz_pos, verti_pos;
@@ -282,7 +284,7 @@ draw_inner_border(int monitor, int style, int width)
 
     /* Dark bevel, parts of this will be overdrawn by the bright
      * bevel border (for the sake of simplicity) */
-    XSetForeground(dpy, bars[monitor].gc, styles[style * 4 + 3].pixel);
+    XSetForeground(dpy, bars[monitor].gc, styles[style * PER_STYLE + 3].pixel);
     XFillRectangle(dpy, bars[monitor].pm, bars[monitor].gc,
                    bars[monitor].dw,
                    bs_global + bs_inner + font_height + seg_margin,
@@ -293,7 +295,7 @@ draw_inner_border(int monitor, int style, int width)
                    bs_inner, font_height + bs_inner);
 
     /* Bright bevel */
-    XSetForeground(dpy, bars[monitor].gc, styles[style * 4 + 2].pixel);
+    XSetForeground(dpy, bars[monitor].gc, styles[style * PER_STYLE + 2].pixel);
     for (i = 0; i < bs_inner; i++)
     {
         XDrawLine(dpy, bars[monitor].pm, bars[monitor].gc,
@@ -429,10 +431,10 @@ draw_text(int monitor, int style, size_t from, size_t len)
             /* Get width of the rendered text. Add a little margin on
              * both sides. */
             XftTextExtentsUtf8(dpy, font, (XftChar8 *)&inputbuf[from], len, &ext);
-            w = horiz_margin + ext.xOff + horiz_margin;
+            w = font_horiz_margin + ext.xOff + font_horiz_margin;
 
             /* Background fill */
-            XSetForeground(dpy, bars[i].gc, styles[style * 4].pixel);
+            XSetForeground(dpy, bars[i].gc, styles[style * PER_STYLE].pixel);
             XFillRectangle(dpy, bars[i].pm, bars[i].gc,
                            bars[i].dw, bs_global + seg_margin,
                            w + 2 * bs_inner, font_height + 2 * bs_inner);
@@ -440,8 +442,8 @@ draw_text(int monitor, int style, size_t from, size_t len)
             /* The text itself */
             xd = XftDrawCreate(dpy, bars[i].pm, DefaultVisual(dpy, screen),
                                DefaultColormap(dpy, screen));
-            XftDrawStringUtf8(xd, &styles[style * 4 + 1], font,
-                              bars[i].dw + bs_inner + horiz_margin,
+            XftDrawStringUtf8(xd, &styles[style * PER_STYLE + 1], font,
+                              bars[i].dw + bs_inner + font_horiz_margin,
                               font_baseline + bs_global + bs_inner + seg_margin,
                               (XftChar8 *)&inputbuf[from], len);
             XftDrawDestroy(xd);
@@ -559,7 +561,7 @@ parse_input_and_draw(void)
 
             case 2:
                 style = inputbuf[i] - '0';
-                if (style < 0 || style >= numstyles)
+                if (style < 0 || style >= NUM_STYLES)
                 {
                     fprintf(stderr, __NAME__": Invalid style, aborting\n");
                     return;
@@ -581,7 +583,7 @@ parse_input_and_draw(void)
 
             case 4:
                 style = inputbuf[i] - '0';
-                if (style < 0 || style >= numstyles)
+                if (style < 0 || style >= NUM_STYLES)
                 {
                     fprintf(stderr, __NAME__": Invalid style, aborting\n");
                     return;
@@ -610,41 +612,92 @@ parse_input_and_draw(void)
 }
 
 static bool
-evaulate_args(int argc, char **argv)
+evaluate_args(int argc, char **argv)
 {
-    int i, b;
+    int i, j;
+    int opt, style_selector = -1, color_selector = -1;
+    char *horiz_pos_str, *verti_pos_str, *font_str, *basic_colors_str[3];
+    char *styles_str[NUM_STYLES][PER_STYLE] = {
+        { "#cbaa94", "#000000", "#d6d6d6", "#535353" },
+        { "#a68b79", "#000000", "#535353", "#d6d6d6" },
+        { "#a0a0a0", "#000000", "#d6d6d6", "#535353" },
+        { "#828282", "#000000", "#535353", "#d6d6d6" },
+        { "#ff0000", "#ffffff", "#d6d6d6", "#535353" },
+        { "#ff0000", "#ffffff", "#535353", "#d6d6d6" },
+    };
 
-    if (argc < 11)
+    /* Default values (see above for default values of styles_str) */
+    horiz_pos_str = "center";
+    verti_pos_str = "bottom";
+    horiz_margin = 5;
+    verti_margin = 5;
+    bs_global = 2;
+    bs_inner = 2;
+    seg_margin = 1;
+    seg_size_empty = 7;
+    font_str = "fixed:pixelsize=13:style=bold";
+    basic_colors_str[0] = "#a0a0a0";
+    basic_colors_str[1] = "#d6d6d6";
+    basic_colors_str[2] = "#535353";
+
+    while ((opt = getopt(argc, argv, "h:v:H:V:b:B:m:e:f:p:o:O:s:c:")) != -1)
     {
-        fprintf(stderr, __NAME__": No basic color/font arguments found\n");
-        return false;
+        switch (opt)
+        {
+            case 'h': horiz_pos_str = optarg; break;
+            case 'v': verti_pos_str = optarg; break;
+            case 'H': horiz_margin = atoi(optarg); break;
+            case 'V': verti_margin = atoi(optarg); break;
+            case 'b': bs_global = atoi(optarg); break;
+            case 'B': bs_inner = atoi(optarg); break;
+            case 'm': seg_margin = atoi(optarg); break;
+            case 'e': seg_size_empty = atoi(optarg); break;
+            case 'f': font_str = optarg; break;
+            case 'p': basic_colors_str[0] = optarg; break;
+            case 'o': basic_colors_str[1] = optarg; break;
+            case 'O': basic_colors_str[2] = optarg; break;
+            case 's':
+                color_selector = 0;
+                style_selector = atoi(optarg);
+                if (style_selector < 0)
+                    style_selector = -1;
+                if (style_selector >= NUM_STYLES)
+                    style_selector = -1;
+                if (style_selector == -1)
+                    fprintf(stderr, __NAME__": Warning, invalid style selector\n");
+                break;
+            case 'c':
+                if (style_selector != -1 && color_selector != -1)
+                {
+                    styles_str[style_selector][color_selector] = optarg;
+                    color_selector++;
+                    if (color_selector >= PER_STYLE)
+                        color_selector = -1;
+                }
+                else
+                    fprintf(stderr, __NAME__": Warning, cannot set color on "
+                            "the basis of an invalid style/color selector "
+                            "(too many colors for one style?)\n");
+                break;
+        }
     }
 
-    if (strncmp(argv[1], "left", strlen("left")) == 0)
+    if (strncmp(horiz_pos_str, "left", strlen("left")) == 0)
         horiz_pos = -1;
-    else if (strncmp(argv[1], "center", strlen("center")) == 0)
+    else if (strncmp(horiz_pos_str, "center", strlen("center")) == 0)
         horiz_pos = 0;
     else
         horiz_pos = 1;
 
-    if (strncmp(argv[2], "top", strlen("top")) == 0)
+    if (strncmp(verti_pos_str, "top", strlen("top")) == 0)
         verti_pos = -1;
     else
         verti_pos = 1;
 
-    horiz_margin = atoi(argv[3]);
-    verti_margin = atoi(argv[4]);
-
-    bs_global = atoi(argv[5]);
-    bs_inner = atoi(argv[6]);
-
-    seg_margin = atoi(argv[7]);
-    seg_size_empty = atoi(argv[8]);
-
-    font = XftFontOpenName(dpy, screen, argv[9]);
+    font = XftFontOpenName(dpy, screen, font_str);
     if (!font)
     {
-        fprintf(stderr, __NAME__": Cannot open font '%s'\n", argv[9]);
+        fprintf(stderr, __NAME__": Cannot open font '%s'\n", font_str);
         return false;
     }
 
@@ -658,37 +711,42 @@ evaulate_args(int argc, char **argv)
      * Similarly, in x direction, there shall be some kind of margin. */
     font_baseline += (int)(0.5 * font_height_extra * font_height);
     font_height += (int)(font_height_extra * font_height);
-    horiz_margin = 0.25 * font_height;
+    font_horiz_margin = 0.25 * font_height;
 
-    for (b = 0, i = 10; i <= 12; i++, b++)
+    for (i = 0; i < 3; i++)
     {
         if (!XftColorAllocName(dpy, DefaultVisual(dpy, screen),
-                               DefaultColormap(dpy, screen), argv[i],
-                               &basic_colors[b]))
+                               DefaultColormap(dpy, screen), basic_colors_str[i],
+                               &basic_colors[i]))
         {
-            fprintf(stderr, __NAME__": Cannot load color '%s'\n", argv[i]);
+            fprintf(stderr, __NAME__": Cannot load color '%s'\n",
+                    basic_colors_str[i]);
             return false;
         }
     }
 
-    numstyles = (argc - 13) / 4;
-    if (numstyles > 0)
+    for (i = 0; i < NUM_STYLES; i++)
     {
-        styles = calloc(numstyles, sizeof (XftColor) * 4);
-        if (styles == NULL)
+        if (styles_str[i][0] != NULL)
         {
-            fprintf(stderr, __NAME__": Calloc for styles failed\n");
-            return false;
-        }
-
-        for (b = 0, i = 13; i < argc && b < numstyles * 4; i++, b++)
-        {
-            if (!XftColorAllocName(dpy, DefaultVisual(dpy, screen),
-                                   DefaultColormap(dpy, screen), argv[i],
-                                   &styles[b]))
+            for (j = 0; j < PER_STYLE; j++)
             {
-                fprintf(stderr, __NAME__": Cannot load color '%s'\n", argv[i]);
-                return false;
+                if (styles_str[i][j] == NULL)
+                {
+                    fprintf(stderr, __NAME__": Expected another color in style "
+                            "%d\n", i);
+                    return false;
+                }
+
+                if (!XftColorAllocName(dpy, DefaultVisual(dpy, screen),
+                                       DefaultColormap(dpy, screen),
+                                       styles_str[i][j],
+                                       &styles[i * PER_STYLE + j]))
+                {
+                    fprintf(stderr, __NAME__": Cannot load color '%s'\n",
+                            styles_str[i][j]);
+                    return false;
+                }
             }
         }
     }
@@ -717,7 +775,7 @@ main(int argc, char **argv)
     if (bars == NULL)
         exit(EXIT_FAILURE);
 
-    if (!evaulate_args(argc, argv))
+    if (!evaluate_args(argc, argv))
         exit(EXIT_FAILURE);
 
     /* The xlib docs say: On a POSIX system, the connection number is
