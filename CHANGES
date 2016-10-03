@@ -1,5 +1,9 @@
 Release history for bevelbar
 
+next
+  [Added]
+  - Validate magic number of farbfeld images as a quick sanity check.
+
 v16.08  2016-08-20
   [Added]
   - Support for displaying farbfeld images.

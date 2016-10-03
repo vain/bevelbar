@@ -344,6 +344,13 @@ draw_image(int monitor, int style, size_t from, size_t len)
         goto cleanout;
     }
 
+    if (memcmp("farbfeld", hdr, (sizeof "farbfeld") - 1) != 0)
+    {
+        fprintf(stderr, __NAME__": Magic number is not 'farbfeld', path '%s'\n",
+                path);
+        goto cleanout;
+    }
+
     width = ntohl(hdr[2]);
     height = ntohl(hdr[3]);
 
