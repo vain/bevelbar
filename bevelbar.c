@@ -43,7 +43,16 @@ static char *
 handle_stdin(size_t *fill)
 {
     char *buf = NULL;
-    size_t len = 0;
+    size_t len = 0, maxlen, chunk;
+
+    /* Allocate memory in chunks of 'chunk' bytes. Do not allocate more
+     * than 'maxlen' bytes, tops. 65535 is the minimum value for
+     * SIZE_MAX and it's more than enough for our purposes (this file
+     * right here doesn't even hit 32k). We make 'maxlen' a little
+     * smaller, so 'len' won't overflow even if SIZE_MAX of this system
+     * actually is 65535. */
+    chunk = 64;
+    maxlen = 65535 - 2 * chunk;
 
     *fill = 0;
 
@@ -51,7 +60,14 @@ handle_stdin(size_t *fill)
     {
         if (*fill == len)
         {
-            len += 16;
+            len += chunk;
+            if (len >= maxlen)
+            {
+                fprintf(stderr, __NAME__": handle_stdin(): Buffer size: "
+                        "maxlen exceeded, aborting\n");
+                return NULL;
+            }
+
             buf = realloc(buf, len);
             if (buf == NULL)
             {
