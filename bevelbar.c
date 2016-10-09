@@ -54,6 +54,10 @@ handle_stdin(size_t *fill)
     chunk = 64;
     maxlen = 65535 - 2 * chunk;
 
+    /* Note: We never free(buf) when returning from this function -- not
+     * even if there were errors. That's because if this function
+     * returns NULL, then the whole program will exit. */
+
     *fill = 0;
 
     for (;;)
