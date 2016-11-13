@@ -1,6 +1,6 @@
 Release history for bevelbar
 
-next
+v16.11  2016-11-13
   [Fixed]
   - When reading input from STDIN, we now limit the buffer to about 64k.
     Previously, it was unlimited, meaning faulty scripts could make
