@@ -1,5 +1,11 @@
 Release history for bevelbar
 
+next
+  [LICENSING]
+  - The project has been relicensed under the MIT license (more
+    precisely called "Expat License", but everyone calls it "MIT
+    license" these days).
+
 v16.11  2016-11-13
   [Fixed]
   - When reading input from STDIN, we now limit the buffer to about 64k.
