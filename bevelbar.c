@@ -115,18 +115,19 @@ compare_barwindows(const void *a, const void *b)
 }
 
 bool
-create_bars_is_duplicate(XRRCrtcInfo *ci, bool *chosen, XRRScreenResources *sr)
+create_bars_is_duplicate(XRRMonitorInfo *allmons, int testmon, bool *chosen,
+                         int nmon)
 {
-    XRRCrtcInfo *o;
     int i;
 
-    for (i = 0; i < sr->ncrtc; i++)
+    for (i = 0; i < nmon; i++)
     {
         if (chosen[i])
         {
-            o = XRRGetCrtcInfo(dpy, sr, sr->crtcs[i]);
-            if (o->x == ci->x && o->y == ci->y &&
-                o->width == ci->width && o->height == ci->height)
+            if (allmons[i].x == allmons[testmon].x &&
+                allmons[i].y == allmons[testmon].y &&
+                allmons[i].width == allmons[testmon].width &&
+                allmons[i].height == allmons[testmon].height)
                 return true;
         }
     }
@@ -137,10 +138,10 @@ create_bars_is_duplicate(XRRCrtcInfo *ci, bool *chosen, XRRScreenResources *sr)
 static struct BarWindow *
 create_bars(void)
 {
-    int c, i;
+    int i, bar_i;
     bool *chosen = NULL;
-    XRRCrtcInfo *ci;
-    XRRScreenResources *sr;
+    XRRMonitorInfo *moninf;
+    int nmon;
     struct BarWindow *bars;
     XSetWindowAttributes wa = {
         .override_redirect = True,
@@ -148,15 +149,17 @@ create_bars(void)
         .event_mask = ExposureMask,
     };
 
-    sr = XRRGetScreenResources(dpy, root);
-    if (sr->ncrtc <= 0)
+    /* We don't free anything if we bail out of this function early
+     * because we immediately call exit() if this function returns NULL. */
+
+    moninf = XRRGetMonitors(dpy, root, True, &nmon);
+    if (nmon <= 0 || moninf == NULL)
     {
         fprintf(stderr, __NAME__": No XRandR screens found\n");
         return NULL;
     }
 
-    numbars = 0;
-    chosen = calloc(sr->ncrtc, sizeof (bool));
+    chosen = calloc(nmon, sizeof (bool));
     if (chosen == NULL)
     {
         fprintf(stderr, __NAME__": Could not allocate memory for pointer "
@@ -164,17 +167,13 @@ create_bars(void)
         return NULL;
     }
 
-    for (c = 0; c < sr->ncrtc; c++)
+    for (numbars = 0, i = 0; i < nmon; i++)
     {
-        ci = XRRGetCrtcInfo(dpy, sr, sr->crtcs[c]);
-        if (ci == NULL || ci->noutput == 0 || ci->mode == None)
-            continue;
-
-        if (create_bars_is_duplicate(ci, chosen, sr))
-            continue;
-
-        chosen[c] = true;
-        numbars++;
+        if (!create_bars_is_duplicate(moninf, i, chosen, nmon))
+        {
+            chosen[i] = true;
+            numbars++;
+        }
     }
 
     bars = calloc(numbars, sizeof (struct BarWindow));
@@ -185,22 +184,20 @@ create_bars(void)
         return NULL;
     }
 
-    i = 0;
-    for (c = 0; c < sr->ncrtc; c++)
+    for (bar_i = 0, i = 0; i < nmon; i++)
     {
-        if (chosen[c])
+        if (chosen[i])
         {
-            ci = XRRGetCrtcInfo(dpy, sr, sr->crtcs[c]);
+            bars[bar_i].mx = moninf[i].x;
+            bars[bar_i].my = moninf[i].y;
+            bars[bar_i].mw = moninf[i].width;
+            bars[bar_i].mh = moninf[i].height;
 
-            bars[i].mx = ci->x;
-            bars[i].my = ci->y;
-            bars[i].mw = ci->width;
-            bars[i].mh = ci->height;
-
-            i++;
+            bar_i++;
         }
     }
     free(chosen);
+    XRRFreeMonitors(moninf);
 
     qsort(bars, numbars, sizeof (struct BarWindow), compare_barwindows);
 
